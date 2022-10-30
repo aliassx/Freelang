@@ -108,7 +108,7 @@ parser_rules(char *BUF, size_t LEN, unsigned int *START, unsigned int *POS)
                 && (*POS > 1 && BUF[*POS - 2] != ':'))));
     }
     /* Single-line comments */
-    if (!strncmp(BUF + *POS, "BTW", 3) && !(*POS > 0 && BUF[*POS - 1] == 'O')) {
+    if (!strncmp(BUF + *POS, "About:", 3) && !(*POS > 0 && BUF[*POS - 1] == 'O')) {
         *POS += 3;
         while (*POS < LEN && BUF[*POS] != '\n') *START = ++(*POS);
     }
@@ -565,10 +565,10 @@ evaluate_parser(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
         struct value *value = NULL;
         /* Skip over any null tokens */
         while (parser_cmp(PARSER, NULL));
-        /* OBTW ... TLDR */
+        /* About: ... TLDR */
         /* Note that this needs to be here because it cannot appear wherever an
          * expression appears but rathar at the beginning of a new line */
-        if (parser_cmp(PARSER, "OBTW"))
+        if (parser_cmp(PARSER, "About:"))
             list_delete(parser_seek(PARSER, "TLDR"));
         /* Evaluate an expression */
         else if (!(value = evaluate_expr(PARSER, STATE, BREAKS, ACCESS)))
@@ -598,34 +598,34 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
     assert(STATE);
     assert(BREAKS);
 
-    /* CAN HAS STDIO? */
-    if (parser_cmp(PARSER, "CAN")) {
-        if (!parser_cmp(PARSER, "HAS")) {
-            error(PARSER, "Expected `HAS' after `CAN'");
+    /* get the io */
+    if (parser_cmp(PARSER, "get")) {
+        if (!parser_cmp(PARSER, "the")) {
+            error(PARSER, "Expected `the' after `get'");
             return NULL;
         }
-        if (!parser_cmp(PARSER, "STDIO?")) {
-            error(PARSER, "Expected `STDIO?' after `CAN HAS'");
+        if (!parser_cmp(PARSER, "io")) {
+            error(PARSER, "Expected `io' after `get the'");
             return NULL;
         }
         /* Do nothing */
         return value_create_noob();
     }
 
-    /* HAI */
-    if (parser_cmp(PARSER, "HAI")) {
+    /* Start */
+    if (parser_cmp(PARSER, "Start")) {
         struct value *scope = NULL;
         struct list *body = NULL;
         struct parser *parser = NULL;
         if (!parser_cmp(PARSER, "1.2") && !parser_cmp(PARSER, "1.3")
                 && !parser_cmp_peek(PARSER, NULL)) {
-            error(PARSER, "Expected version after `HAI'");
+            error(PARSER, "Expected version after `Start'");
             return NULL;
         }
         scope = value_create_bukkit(STATE);
-        body = parser_seek(PARSER, "KTHXBYE");
+        body = parser_seek(PARSER, "Stop");
         list_pop_front(body);      /* <NULL> */
-        list_pop_back(body);       /* KTHXBYE */
+        list_pop_back(body);       /* Stop */
         parser = parser_create_bind(PARSER->name, body);
         if (evaluate_parser(parser, scope, BREAKS, ACCESS)) {
             parser_delete(parser);
@@ -639,13 +639,13 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
         return value_create_noob();
     }
 
-    /* VISIBLE */
-    if (parser_cmp(PARSER, "VISIBLE")) {
+    /* display */
+    if (parser_cmp(PARSER, "display")) {
         /* Retrieve all arguments */
         struct list *args = args_get(PARSER, STATE, BREAKS, ACCESS, -1);
         /* Check for at least one argument */
         if (list_size(args) == 0) {
-            error(PARSER, "No arguments supplied to VISIBLE");
+            error(PARSER, "No arguments supplied to display");
             list_delete(args);
             return NULL;
         }
@@ -656,7 +656,7 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
                 struct value *val = NULL;
                 val = value_cast_yarn(arg);
                 if (!val) {
-                    error(PARSER, "Invalid argument to VISIBLE");
+                    error(PARSER, "Invalid argument to display");
                     list_delete(args);
                     return NULL;
                 }
@@ -1068,8 +1068,8 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
         return func_foldl(values, func_smoosh);
     }
 
-    /* ... HAS A ... ITZ A */
-    if (parser_cmp_at(PARSER, 1, "HAS")) {
+    /* ... new a ... is a */
+    if (parser_cmp_at(PARSER, 1, "new")) {
         struct token *token = parser_get(PARSER);
         struct value *value = NULL;
         struct symbol *symbol = token_to_symbol(STATE, ACCESS, token);
@@ -1089,12 +1089,12 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
             error(PARSER, "Assignment target is not writable");
             return NULL;
         }
-        if (!parser_cmp(PARSER, "HAS")) {
-            error(PARSER, "Expected `HAS'");
+        if (!parser_cmp(PARSER, "new")) {
+            error(PARSER, "Expected `new'");
             return NULL;
         }
         if (!parser_cmp(PARSER, "A")) {
-            error(PARSER, "Expected `A' after `HAS'");
+            error(PARSER, "Expected `A' after `new'");
             return NULL;
         }
         /* Make sure next token is non-NULL and unique */
@@ -1108,7 +1108,7 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
             return NULL;
         }
         /* Check for initialization */
-        if (parser_cmp(PARSER, "ITZ")) {
+        if (parser_cmp(PARSER, "is")) {
             /* Check for empty initialization */
             if (parser_cmp(PARSER, "A")) {
                 if (parser_cmp(PARSER, "NOOB"))
@@ -1129,11 +1129,11 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
                 }
             }
             /* Inheritance */
-            else if (parser_cmp(PARSER, "LIEK")) {
+            else if (parser_cmp(PARSER, "like")) {
                 struct token *token = NULL;
                 struct value *parent = NULL;
                 if (!parser_cmp(PARSER, "A")) {
-                    error(PARSER, "Expected `A' after `ITZ LIEK'");
+                    error(PARSER, "Expected `A' after `is like'");
                     return NULL;
                 }
                 token = parser_get(PARSER);
@@ -1156,7 +1156,7 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
             }
             else value = evaluate_expr(PARSER, STATE, BREAKS, ACCESS);
             if (!value) {
-                error(PARSER, "Expected expression after `ITZ'");
+                error(PARSER, "Expected expression after `is'");
                 return NULL;
             }
         }
@@ -1383,7 +1383,7 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
         return value_create_noob();
     }
 
-    /* O RLY?, O HAI */
+    /* O Really?, Start */
     if (parser_cmp(PARSER, "O")) {
         if (parser_cmp(PARSER, "RLY?")) {
             struct value *value = NULL;
@@ -1453,13 +1453,13 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
                 }
             }
         }
-        else if (parser_cmp(PARSER, "HAI")) {
+        else if (parser_cmp(PARSER, "Start")) {
             struct token *name = NULL;
             struct value *state = NULL;
             struct list *body = NULL, *breaks = NULL, *grants = NULL;
             struct parser *parser = NULL;
             if (!parser_cmp(PARSER, "IM")) {
-                error(PARSER, "Expected `IM' after `O HAI'");
+                error(PARSER, "Expected `IM' after `Start'");
                 return NULL;
             }
             name = parser_get(PARSER);
@@ -1468,8 +1468,8 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
                 struct symbol *symbol = NULL;
                 struct value *value = NULL;
                 enum access access;
-                if (!parser_cmp(PARSER, "LIEK")) {
-                    error(PARSER, "Expected `LIEK' after `IM'");
+                if (!parser_cmp(PARSER, "like")) {
+                    error(PARSER, "Expected `like' after `IM'");
                     return NULL;
                 }
                 token = parser_get(PARSER);
@@ -1495,7 +1495,7 @@ evaluate_expr(struct parser *PARSER, struct value *STATE, struct list *BREAKS,
                 state->parent = value;
             }
             else state = value_create_bukkit(STATE);
-            /* Get the body of the O HAI block */
+            /* Get the body of the O Start block */
             body = parser_seek(PARSER, "KTHX");
             list_pop_front(body);      /* <NULL> */
             list_pop_back(body);       /* KTHX */
@@ -1960,7 +1960,7 @@ main(int ARGC, char **ARGV)
     state = value_create_bukkit(NULL);
     breaks = list_create(data_delete_token, data_copy_token);
     /* Note that we should never break from main body */
-    list_push_front(breaks, token_create_str("KTHXBYE"));
+    list_push_front(breaks, token_create_str("Stop"));
     access = list_create(data_delete_null, data_copy_null);
     /* Initialize the default IT variable */
     state_write(value_get_bukkit(state), "IT", value_create_noob());
